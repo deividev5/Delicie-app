@@ -1,0 +1,308 @@
+generator client {
+  provider            = "prisma-client"
+  output              = "../src/generated/prisma"
+  importFileExtension = "ts"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─── Enums ──────────────────────────────────────────────────────────────────
+
+enum Role {
+  ADMIN
+  CUSTOMER
+  DELIVERY
+}
+
+enum OrderStatus {
+  CREATED
+  AWAITING_PAYMENT
+  CONFIRMED
+  PREPARING
+  READY
+  OUT_FOR_DELIVERY
+  DELIVERED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  PENDING
+  CONFIRMED
+  EXPIRED
+  REFUNDED
+}
+
+enum PaymentMethod {
+  PIX
+}
+
+enum VehicleType {
+  MOTO
+  BICICLETA
+  CARRO
+}
+
+enum NotificationType {
+  ORDER_STATUS
+  NEW_ORDER
+  NEW_DELIVERY
+}
+
+// ─── User ───────────────────────────────────────────────────────────────────
+
+model User {
+  id                String    @id @default(uuid())
+  name              String
+  email             String    @unique
+  phone             String
+  password          String
+  role              Role      @default(CUSTOMER)
+  avatarUrl         String?
+  isActive          Boolean   @default(true)
+  tokenVersion      Int       @default(0)
+  resetToken        String?
+  resetTokenExpires DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  addresses      Address[]
+  orders         Order[]         @relation("CustomerOrders")
+  deliveries     Order[]         @relation("DeliveryOrders")
+  reviews        Review[]
+  notifications  Notification[]
+  deliveryPerson DeliveryPerson?
+
+  @@map("users")
+}
+
+// ─── Address ────────────────────────────────────────────────────────────────
+
+model Address {
+  id           String   @id @default(uuid())
+  userId       String
+  label        String
+  street       String
+  number       String
+  complement   String?
+  neighborhood String
+  city         String
+  state        String
+  zipCode      String
+  latitude     Decimal?
+  longitude    Decimal?
+  isDefault    Boolean  @default(false)
+  createdAt    DateTime @default(now())
+
+  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  orders Order[]
+
+  @@map("addresses")
+}
+
+// ─── Category ───────────────────────────────────────────────────────────────
+
+model Category {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  description String?
+  imageUrl    String?
+  isActive    Boolean  @default(true)
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+
+  products Product[]
+
+  @@map("categories")
+}
+
+// ─── Product ────────────────────────────────────────────────────────────────
+
+model Product {
+  id          String   @id @default(uuid())
+  categoryId  String
+  name        String
+  description String?
+  basePrice   Decimal
+  imageUrl    String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  category Category      @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  sizes    ProductSize[]
+  items    OrderItem[]
+
+  @@map("products")
+}
+
+// ─── Size ───────────────────────────────────────────────────────────────────
+
+model Size {
+  id        String @id @default(uuid())
+  name      String @unique
+  slices    Int
+  sortOrder Int    @default(0)
+
+  products ProductSize[]
+  items    OrderItem[]
+
+  @@map("sizes")
+}
+
+// ─── ProductSize ────────────────────────────────────────────────────────────
+
+model ProductSize {
+  id        String  @id @default(uuid())
+  productId String
+  sizeId    String
+  price     Decimal
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  size    Size    @relation(fields: [sizeId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, sizeId])
+  @@map("product_sizes")
+}
+
+// ─── Order ──────────────────────────────────────────────────────────────────
+
+model Order {
+  id               String      @id @default(uuid())
+  customerId       String
+  deliveryPersonId String?
+  addressId        String
+  status           OrderStatus @default(CREATED)
+  subtotal         Decimal
+  deliveryFee      Decimal     @default(0)
+  totalAmount      Decimal
+  notes            String?
+  paidAt           DateTime?
+  deliveredAt      DateTime?
+  cancelledAt      DateTime?
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+
+  customer       User        @relation("CustomerOrders", fields: [customerId], references: [id], onDelete: Restrict)
+  deliveryPerson User?       @relation("DeliveryOrders", fields: [deliveryPersonId], references: [id], onDelete: SetNull)
+  address        Address     @relation(fields: [addressId], references: [id], onDelete: Restrict)
+  items          OrderItem[]
+  payment        Payment?
+  review         Review?
+
+  @@map("orders")
+}
+
+// ─── OrderItem ──────────────────────────────────────────────────────────────
+
+model OrderItem {
+  id         String   @id @default(uuid())
+  orderId    String
+  productId  String
+  sizeId     String?
+  quantity   Int
+  unitPrice  Decimal
+  totalPrice Decimal
+  notes      String?
+  createdAt  DateTime @default(now())
+
+  order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Restrict)
+  size    Size?   @relation(fields: [sizeId], references: [id], onDelete: SetNull)
+
+  @@map("order_items")
+}
+
+// ─── Payment ────────────────────────────────────────────────────────────────
+
+model Payment {
+  id           String        @id @default(uuid())
+  orderId      String        @unique
+  externalId   String?
+  method       PaymentMethod @default(PIX)
+  amount       Decimal
+  status       PaymentStatus @default(PENDING)
+  pixQrCode    String?
+  pixCopyPaste String?
+  expiresAt    DateTime?
+  confirmedAt  DateTime?
+  createdAt    DateTime      @default(now())
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@map("payments")
+}
+
+// ─── Review ─────────────────────────────────────────────────────────────────
+
+model Review {
+  id         String   @id @default(uuid())
+  orderId    String   @unique
+  customerId String
+  rating     Int
+  comment    String?
+  createdAt  DateTime @default(now())
+
+  order    Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  customer User  @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@map("reviews")
+}
+
+// ─── DeliveryPerson ─────────────────────────────────────────────────────────
+
+model DeliveryPerson {
+  id           String      @id @default(uuid())
+  userId       String      @unique
+  vehicleType  VehicleType
+  licensePlate String?
+  isAvailable  Boolean     @default(false)
+  createdAt    DateTime    @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("delivery_persons")
+}
+
+// ─── Notification ───────────────────────────────────────────────────────────
+
+model Notification {
+  id        String           @id @default(uuid())
+  userId    String
+  title     String
+  body      String
+  type      NotificationType
+  data      Json?
+  isRead    Boolean          @default(false)
+  createdAt DateTime         @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notifications")
+}
+
+// ─── BusinessHours ──────────────────────────────────────────────────────────
+
+model BusinessHours {
+  id        String   @id @default(uuid())
+  dayOfWeek Int
+  openTime  String
+  closeTime String
+  isOpen    Boolean  @default(true)
+  updatedAt DateTime @updatedAt
+
+  @@unique([dayOfWeek])
+  @@map("business_hours")
+}
+
+// ─── Settings ───────────────────────────────────────────────────────────────
+
+model Settings {
+  id        String   @id @default(uuid())
+  key       String   @unique
+  value     String
+  updatedAt DateTime @updatedAt
+
+  @@map("settings")
+}

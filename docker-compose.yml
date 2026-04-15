@@ -1,0 +1,15 @@
+services:
+  pg:
+    image: bitnami/postgresql:latest
+    container_name: delicie-api-pg
+    ports:
+      - '5432:5432'
+    environment:
+      POSTGRESQL_USERNAME: docker
+      POSTGRESQL_PASSWORD: docker
+      POSTGRESQL_DATABASE: apidelicie
+    volumes:
+      - delicie-pg-data:/bitnami/postgresql
+
+volumes:
+  delicie-pg-data:
