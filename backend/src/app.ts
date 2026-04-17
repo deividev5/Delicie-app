@@ -9,6 +9,7 @@ import { env } from './env/index.ts'
 import { authRoutes } from './modules/auth/route.ts'
 import fastifyJwt from '@fastify/jwt'
 import { userRoutes } from './modules/users/route.ts'
+import { addressRoutes } from './modules/addresses/routes.ts'
 
 // Criação da instância do Fastify com o provedor de tipos Zod
 export const app = fastify().withTypeProvider<ZodTypeProvider>()
@@ -32,3 +33,4 @@ app.register(fastifyMultipart, {
 // Registro das rotas de usuário com o prefixo '/auth'
 app.register(authRoutes, { prefix: '/auth' })
 app.register(userRoutes, { prefix: '/users' })
+app.register(addressRoutes, { prefix: '/users' })

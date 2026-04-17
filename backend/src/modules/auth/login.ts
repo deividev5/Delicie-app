@@ -41,10 +41,8 @@ export async function loginController(
   const accessToken = await reply.jwtSign(
     { role: user.role },
     {
-      sign: {
-        sub: user.id,
-        expiresIn: '15m',
-      },
+      sub: user.id,
+      expiresIn: '15m',
     },
   )
 
@@ -52,10 +50,8 @@ export async function loginController(
   const refreshToken = await reply.jwtSign(
     { type: 'refresh', tokenVersion: user.tokenVersion },
     {
-      sign: {
-        sub: user.id,
-        expiresIn: '7d',
-      },
+      sub: user.id,
+      expiresIn: '7d',
     },
   )
 
