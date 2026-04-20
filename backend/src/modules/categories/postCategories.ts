@@ -1,6 +1,5 @@
 import { FastifyReply, FastifyRequest } from 'fastify'
 import { prisma } from '../../lib/prisma.ts'
-import { create } from 'node:domain'
 
 export async function postCategoriesController(
   request: FastifyRequest,
@@ -44,7 +43,10 @@ export async function postCategoriesController(
     category: {
       id: category.id,
       name: category.name,
-      createdAt: category.createdAt,
+      desription: category.description,
+      imageUrl: category.imageUrl,
+      isActive: category.isActive,
+      sortOrder: category.sortOrder,
     },
   })
 }

@@ -28,6 +28,7 @@ export async function categoryRoutes(app: FastifyTypedInstance) {
           201: z.object({
             message: z.string(),
             category: z.object({
+              id: z.string(),
               name: z.string(),
               description: z.string().optional(),
               imageUrl: z.string().optional(),
