@@ -12,6 +12,7 @@ import { userRoutes } from './modules/users/route.ts'
 import { addressRoutes } from './modules/addresses/routes.ts'
 import { categoryRoutes } from './modules/categories/route.ts'
 import { productsRoutes } from './modules/products/routes.ts'
+import { sizesRoutes } from './modules/sizes/routes.ts'
 
 // Criação da instância do Fastify com o provedor de tipos Zod
 export const app = fastify().withTypeProvider<ZodTypeProvider>()
@@ -38,3 +39,4 @@ app.register(userRoutes, { prefix: '/users' })
 app.register(addressRoutes, { prefix: '/users' })
 app.register(categoryRoutes, { prefix: '/categories' })
 app.register(productsRoutes, { prefix: '/products' })
+app.register(sizesRoutes, { prefix: '/sizes' })
