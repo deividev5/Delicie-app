@@ -153,6 +153,14 @@ export async function productsRoutes(app: FastifyTypedInstance) {
           basePrice: z.coerce.number().positive(),
           imageUrl: z.string().optional(),
           isActive: z.boolean().default(true),
+          sizes: z
+            .array(
+              z.object({
+                sizeId: z.string(),
+                price: z.coerce.number().positive(),
+              }),
+            )
+            .optional(),
         }),
         response: {
           201: z.object({
@@ -166,6 +174,18 @@ export async function productsRoutes(app: FastifyTypedInstance) {
               imageUrl: z.string().nullable(),
               isActive: z.boolean(),
               createdAt: z.date(),
+              sizes: z.array(
+                z.object({
+                  id: z.string(),
+                  price: z.number(),
+                  size: z.object({
+                    id: z.string(),
+                    name: z.string(),
+                    slices: z.number(),
+                    sortOrder: z.number(),
+                  }),
+                }),
+              ),
             }),
           }),
           400: z.object({ message: z.string() }),

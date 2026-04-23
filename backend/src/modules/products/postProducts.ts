@@ -12,6 +12,7 @@ export async function postProductsController(
     basePrice: number
     imageUrl?: string
     isActive: boolean
+    sizes?: Array<{ sizeId: string; price: number }>
   }
 
   // Verifica se a categoria existe
@@ -44,6 +45,19 @@ export async function postProductsController(
       basePrice: data.basePrice,
       imageUrl: data.imageUrl,
       isActive: data.isActive,
+      sizes: data.sizes
+        ? {
+            create: data.sizes.map((s) => ({
+              sizeId: s.sizeId,
+              price: s.price,
+            })),
+          }
+        : undefined,
+    },
+    include: {
+      sizes: {
+        include: { size: true },
+      },
     },
   })
 
@@ -58,6 +72,16 @@ export async function postProductsController(
       imageUrl: product.imageUrl,
       isActive: product.isActive,
       createdAt: product.createdAt,
+      sizes: product.sizes.map((ps) => ({
+        id: ps.id,
+        price: Number(ps.price),
+        size: {
+          id: ps.size.id,
+          name: ps.size.name,
+          slices: ps.size.slices,
+          sortOrder: ps.size.sortOrder,
+        },
+      })),
     },
   })
 }
